@@ -7,9 +7,11 @@ interface PrismaError {
   clientVersion?: string;
 }
 
-export async function PUT(req: Request, context: { params: { id: string } }) {
-  const { params } = context;
-  const id = params?.id;
+export async function PUT(
+  req: Request,
+  { params }: { params: { id: string } },
+) {
+  const id = params.id;
 
   if (!id) {
     return NextResponse.json({ error: "ID is required" }, { status: 400 });
@@ -52,11 +54,9 @@ export async function PUT(req: Request, context: { params: { id: string } }) {
 
 export async function DELETE(
   req: Request,
-  context: { params: { id: string } },
+  { params }: { params: { id: string } },
 ) {
-  const { params } = context;
-  const id = params?.id;
-
+  const id = params.id;
   if (!id) {
     return NextResponse.json({ error: "ID is required" }, { status: 400 });
   }
