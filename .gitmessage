@@ -1,0 +1,26 @@
+<type>(<scope>): <summary>
+
+# feat: A new feature
+# fix: A bug fix
+# docs: Documentation only changes
+# style: Changes that do not affect the meaning of the code
+# refactor: A code change that neither fixes a bug nor adds a feature
+# perf: A code change that improves performance
+# test: Adding missing tests or correcting existing tests
+# chore: Changes to the build process or auxiliary tools
+
+# <type> is required
+# (<scope>) is optional, e.g., (core), (ui), (auth)
+# <summary> should be in present tense, not capitalized, no period at end
+# Use imperative mood: "change" not "changed" or "changes"
+
+# Provide additional contextual information below (optional)
+
+
+# Reference GitHub issues or breaking changes below (optional)
+
+
+# Examples:
+# feat(auth): add login with google oauth
+# fix(api): handle null response from user endpoint
+# docs: update deployment guide for vercel
