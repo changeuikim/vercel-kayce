@@ -6,29 +6,29 @@ Next.js 15와 React 19 기반의 정적 블로그 시스템
 
 ### Core
 
--   Next.js 15
--   React 19
--   TypeScript 5
--   Node.js 20 LTS
+- Next.js 15
+- React 19
+- TypeScript 5
+- Node.js 20 LTS
 
 ### Frontend
 
--   Tailwind CSS
--   Shadcn/ui
--   MDX
+- Tailwind CSS
+- Shadcn/ui
+- MDX
 
 ### Backend
 
--   GraphQL Yoga
--   Next Auth
--   Vercel Postgres
--   Giscus (GitHub Discussions)
+- GraphQL Yoga
+- Next Auth
+- Vercel Postgres
+- Giscus (GitHub Discussions)
 
 ## 주요 특징
 
--   MDX 기반 콘텐츠 관리
--   전체 페이지 정적 생성 (SSG)
--   매일 새벽 3시 전체 페이지 재빌드 (cron)
+- MDX 기반 콘텐츠 관리
+- 전체 페이지 정적 생성 (SSG)
+- 매일 새벽 3시 전체 페이지 재빌드 (cron)
 
 ## 프로젝트 구조
 
@@ -58,5 +58,5 @@ GISCUS_REPO_ID=        # Giscus
 
 ## 배포
 
--   Vercel
--   Vercel Cron (매일 새벽 3시 재빌드)
+- Vercel
+- Vercel Cron (매일 새벽 3시 재빌드)
