@@ -1,0 +1,20 @@
+# GraphQL 스키마 경로: GraphQL SDL 정의 파일
+# npx graphql-codegen --config codegen.yml
+schema: src/app/graphql/schema.ts
+
+# 생성된 파일의 출력 경로와 설정
+generates:
+    src/app/graphql/generated/types.ts:
+        plugins:
+            - typescript # GraphQL 타입을 TypeScript 타입으로 생성
+            - typescript-resolvers # GraphQL 리졸버 타입 생성
+        config:
+            contextType: '@/lib/context#Context' # GraphQL 리졸버에서 사용할 Context 타입 경로
+            mappers: # GraphQL 타입과 Prisma 모델 간 매핑 설정
+                Post: '@prisma/client#Post as PrismaPost'
+                Category: '@prisma/client#Category as PrismaCategory'
+                Tag: '@prisma/client#Tag as PrismaTag'
+                User: '@prisma/client#User as PrismaUser'
+                Like: '@prisma/client#Like as PrismaLike'
+            scalars: # GraphQL 스칼라 타입 매핑
+                DateTime: Date
