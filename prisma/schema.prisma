@@ -22,13 +22,13 @@ datasource db {
 
 /* 
   dev 실행
-  npx dotenv -e .env.local -- prisma migrate dev --name init
+  npx dotenv -e .env.development.local -- prisma migrate dev --name init
   npx prisma generate
 */
 
 /* 
   prod 실행
-  npx prisma migrate dev --name init
+  npx dotenv -e .env.production.local -- prisma migrate dev --name init
   npx prisma generate
   npx prisma db pull
   npx prisma generate
