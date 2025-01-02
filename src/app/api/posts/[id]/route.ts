@@ -24,6 +24,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         const updatedPost = await prisma.post.update({
             where: { id: Number(id) },
             data: { ...(title && { title }), ...(content && { content }) },
+            include: {
+                categories: true,
+                tags: true,
+            },
         });
 
         return NextResponse.json(updatedPost, { status: 200 });

@@ -5,7 +5,7 @@
     "scripts": {
         "dev": "next dev --turbopack",
         "generate": "prisma generate",
-        "build": "next build",
+        "build": "prisma generate && next build",
         "start": "next start",
         "lint": "next lint",
         "fix": "prettier --write './src/**/*.{ts,tsx,js,jsx}' && eslint './src/**/*.{ts,tsx,js,jsx}' --fix"

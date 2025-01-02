@@ -1,9 +1,16 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 
+interface CreatePostRequest {
+    title: string;
+    content: string;
+    categories?: string[];
+    tags?: string[];
+}
+
 export async function POST(req: NextRequest) {
     try {
-        const { title, content, categories, tags } = await req.json();
+        const { title, content, categories = [], tags = [] }: CreatePostRequest = await req.json();
 
         if (!title || !content) {
             return NextResponse.json({ error: 'Title and content are required' }, { status: 400 });
@@ -13,18 +20,24 @@ export async function POST(req: NextRequest) {
             data: {
                 title,
                 content,
-                categories: {
-                    connectOrCreate: categories.map((name: string) => ({
-                        where: { name },
-                        create: { name },
-                    })),
-                },
-                tags: {
-                    connectOrCreate: tags.map((name: string) => ({
-                        where: { name },
-                        create: { name },
-                    })),
-                },
+                categories:
+                    categories.length > 0
+                        ? {
+                              connectOrCreate: categories.map((name) => ({
+                                  where: { name },
+                                  create: { name },
+                              })),
+                          }
+                        : undefined,
+                tags:
+                    tags.length > 0
+                        ? {
+                              connectOrCreate: tags.map((name) => ({
+                                  where: { name },
+                                  create: { name },
+                              })),
+                          }
+                        : undefined,
             },
             include: {
                 categories: true,
@@ -44,7 +57,12 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
     try {
-        const posts = await prisma.post.findMany();
+        const posts = await prisma.post.findMany({
+            include: {
+                categories: true,
+                tags: true,
+            },
+        });
         return NextResponse.json(posts, { status: 200 });
     } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
