@@ -29,6 +29,46 @@ export const userUtils = {
     },
 
     /**
+     * 새 사용자 생성 with 트랜잭션
+     * - 이메일 중복 검사 후 사용자 생성
+     * - 비밀번호가 제공되면 해시화 후 저장
+     * @param data - 사용자 생성에 필요한 데이터
+     * @returns 생성된 SafeUser
+     */
+    create: async (data: CreateUserInput): Promise<SafeUser> => {
+        try {
+            return await prisma.$transaction(async (tx) => {
+                // 중복 이메일 검사
+                const existingUser = await tx.user.findFirst({
+                    where: { email: data.email, isDeleted: false },
+                    select: { id: true },
+                });
+
+                if (existingUser) {
+                    throw new PrismaCustomError('DUPLICATE_EMAIL', '이미 사용 중인 이메일입니다.');
+                }
+
+                // 비밀번호 해시화
+                const hashedPassword = data.password
+                    ? await userUtils.hashPassword(data.password)
+                    : null;
+
+                const user = await tx.user.create({
+                    data: {
+                        ...data,
+                        password: hashedPassword,
+                    },
+                    select: userSelectFields,
+                });
+
+                return user as SafeUser;
+            });
+        } catch (error) {
+            return handlePrismaError(error);
+        }
+    },
+
+    /**
      * 이메일을 기준으로 사용자 조회
      * - 소프트 삭제된 데이터는 기본적으로 제외
      * @param email - 사용자 이메일
@@ -75,40 +115,36 @@ export const userUtils = {
     },
 
     /**
-     * 새 사용자 생성 with 트랜잭션
-     * - 이메일 중복 검사 후 사용자 생성
-     * - 비밀번호가 제공되면 해시화 후 저장
-     * @param data - 사용자 생성에 필요한 데이터
-     * @returns 생성된 SafeUser
+     * 페이지네이션된 사용자 목록 조회
+     * - 정렬, 페이지 번호, 제한 수를 설정하여 조회
+     * @param options - 페이지네이션 옵션
+     * @returns PaginatedUsers 객체
      */
-    create: async (data: CreateUserInput): Promise<SafeUser> => {
+    findMany: async (options: PaginationOptions = {}): Promise<PaginatedUsers> => {
+        const { page = 1, limit = 10, orderBy = { createdAt: 'desc' } } = options;
+
         try {
-            return await prisma.$transaction(async (tx) => {
-                // 중복 이메일 검사
-                const existingUser = await tx.user.findFirst({
-                    where: { email: data.email, isDeleted: false },
-                    select: { id: true },
-                });
+            const skip = (page - 1) * limit;
 
-                if (existingUser) {
-                    throw new PrismaCustomError('DUPLICATE_EMAIL', '이미 사용 중인 이메일입니다.');
-                }
-
-                // 비밀번호 해시화
-                const hashedPassword = data.password
-                    ? await userUtils.hashPassword(data.password)
-                    : null;
-
-                const user = await tx.user.create({
-                    data: {
-                        ...data,
-                        password: hashedPassword,
-                    },
+            const [users, total] = await prisma.$transaction([
+                prisma.user.findMany({
+                    where: { isDeleted: false },
                     select: userSelectFields,
-                });
+                    skip,
+                    take: limit,
+                    orderBy,
+                }),
+                prisma.user.count({ where: { isDeleted: false } }),
+            ]);
 
-                return user as SafeUser;
-            });
+            return {
+                users: users as SafeUser[],
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+                cacheKey: `users_p${page}_l${limit}_${JSON.stringify(orderBy)}`,
+            };
         } catch (error) {
             return handlePrismaError(error);
         }
@@ -141,29 +177,6 @@ export const userUtils = {
     },
 
     /**
-     * 사용자 소프트 삭제
-     * - isDeleted 필드를 true로 설정하고 삭제 시간 기록
-     * @param id - 삭제할 사용자 ID
-     * @returns 삭제된 SafeUser
-     */
-    softDelete: async (id: string): Promise<SafeUser> => {
-        try {
-            const user = await prisma.user.update({
-                where: { id },
-                data: {
-                    isDeleted: true,
-                    deletedAt: new Date(),
-                },
-                select: userSelectFields,
-            });
-
-            return user as SafeUser;
-        } catch (error) {
-            return handlePrismaError(error);
-        }
-    },
-
-    /**
      * 사용자 상태 업데이트
      * @param id - 업데이트할 사용자 ID
      * @returns 업데이트된 SafeUser
@@ -183,36 +196,23 @@ export const userUtils = {
     },
 
     /**
-     * 페이지네이션된 사용자 목록 조회
-     * - 정렬, 페이지 번호, 제한 수를 설정하여 조회
-     * @param options - 페이지네이션 옵션
-     * @returns PaginatedUsers 객체
+     * 사용자 소프트 삭제
+     * - isDeleted 필드를 true로 설정하고 삭제 시간 기록
+     * @param id - 삭제할 사용자 ID
+     * @returns 삭제된 SafeUser
      */
-    findMany: async (options: PaginationOptions = {}): Promise<PaginatedUsers> => {
-        const { page = 1, limit = 10, orderBy = { createdAt: 'desc' } } = options;
-
+    softDelete: async (id: string): Promise<SafeUser> => {
         try {
-            const skip = (page - 1) * limit;
+            const user = await prisma.user.update({
+                where: { id },
+                data: {
+                    isDeleted: true,
+                    deletedAt: new Date(),
+                },
+                select: userSelectFields,
+            });
 
-            const [users, total] = await prisma.$transaction([
-                prisma.user.findMany({
-                    where: { isDeleted: false },
-                    select: userSelectFields,
-                    skip,
-                    take: limit,
-                    orderBy,
-                }),
-                prisma.user.count({ where: { isDeleted: false } }),
-            ]);
-
-            return {
-                users: users as SafeUser[],
-                total,
-                page,
-                limit,
-                totalPages: Math.ceil(total / limit),
-                cacheKey: `users_p${page}_l${limit}_${JSON.stringify(orderBy)}`,
-            };
+            return user as SafeUser;
         } catch (error) {
             return handlePrismaError(error);
         }
