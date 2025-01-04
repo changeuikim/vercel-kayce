@@ -12,7 +12,7 @@ import crypto from 'crypto';
 
 export interface UserUtils {
     create(data: CreateUserInput): Promise<SafeUser>;
-    findByProviderIdHash(providerId: string): Promise<SafeUser | null>;
+    findByProviderId(providerId: string): Promise<SafeUser | null>;
     findMany(options?: PaginationOptions): Promise<PaginatedUsers>;
     update(id: string, data: UpdateUserInput): Promise<SafeUser>;
     softDelete(id: string): Promise<SafeUser>;
@@ -52,7 +52,7 @@ export const userUtils: UserUtils = {
                 // 중복 시 예외처리
                 if (existingUser) {
                     throw new PrismaErrorHandler(
-                        `User with providerIdHash "${providerIdHash}" already exists.`,
+                        `User with providerId "${data.providerId}" already exists.`,
                         'DUPLICATE_PROVIDER_ID'
                     );
                 }
@@ -78,7 +78,7 @@ export const userUtils: UserUtils = {
             );
         }
     },
-    findByProviderIdHash: async (providerId: string): Promise<SafeUser | null> => {
+    findByProviderId: async (providerId: string): Promise<SafeUser | null> => {
         try {
             // providerIdHash 생성
             const providerIdHash = parseAndHashProviderId(providerId);
