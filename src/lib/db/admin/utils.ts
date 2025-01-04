@@ -1,9 +1,9 @@
 // src/lib/db/user.ts
 
 import bcrypt from 'bcryptjs'; // 비밀번호 해시화를 위한 bcrypt
-import { prisma } from './prisma'; // Prisma 클라이언트
+import { prisma } from '../prisma'; // Prisma 클라이언트
 import { userSelectFields } from './constants'; // 공통적으로 사용되는 필드 정의
-import { handlePrismaError, PrismaCustomError } from './errors'; // 에러 핸들링
+import { handlePrismaError, PrismaCustomError } from '../common/prismaErrors'; // 에러 핸들링
 import type {
     CreateUserInput,
     UpdateUserInput,
@@ -11,7 +11,7 @@ import type {
     UserFindOptions,
     PaginationOptions,
     PaginatedUsers,
-} from './types/user';
+} from './types';
 
 const SALT_ROUNDS = 10; // 비밀번호 해시화를 위한 솔트
 

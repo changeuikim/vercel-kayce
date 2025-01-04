@@ -1,22 +1,20 @@
-import { CreateUserInput } from '@/lib/db/types/user';
-import { AuthProvider, AccountStatus, UserRole } from '@prisma/client';
+import { CreateUserInput } from '@/lib/db/user/types';
+import { AuthProvider } from '@prisma/client';
 
+// 테스트 사용자 데이터 생성 함수
 export const createTestUser = (override: Partial<CreateUserInput> = {}): CreateUserInput => ({
-    email: 'test@example.com',
-    password: 'password123',
-    name: '테스트 유저',
-    provider: AuthProvider.LOCAL,
-    status: AccountStatus.PENDING,
-    role: UserRole.USER,
+    provider: AuthProvider.GITHUB, // 기본값으로 GitHub 사용
+    providerId: 'testProviderIdHash', // 공급자 ID
     ...override,
 });
 
-export const createTestUsers = async (count: number, baseEmail = 'test') => {
+// 테스트 사용자 데이터 생성기
+export const createTestUsers = async (count: number, baseProviderId = 'testId') => {
     const users: CreateUserInput[] = [];
     for (let i = 0; i < count; i++) {
         users.push(
             createTestUser({
-                email: `${baseEmail}${i}@example.com`,
+                providerId: `${baseProviderId}${i}`,
             })
         );
     }

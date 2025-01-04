@@ -1,8 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// Prisma Schema for Social Login Users and Admins with Scoped Permissions
 
 // # 개발 환경 (development)
 // cp .env.development.local .env
@@ -21,71 +17,113 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// 사용자의 역할을 정의하는 enum
-// 기본적으로 일반 사용자(USER)와 관리자(ADMIN)로 나뉩니다.
-enum UserRole {
-  USER
-  ADMIN
-}
-
-// 인증 공급자를 정의하는 enum
-// 소셜 로그인과 로컬 인증을 구분하는 데 사용됩니다.
+// 인증 공급자 정의
 enum AuthProvider {
-  LOCAL
   GITHUB
   GOOGLE
   KAKAO
   NAVER
 }
 
-// 계정 상태를 정의하는 enum
-// PENDING은 관리자의 승인이 필요한 상태, ACTIVE는 정상 계정,
-// SUSPENDED는 정지된 계정, DEMO는 데모 용도로 생성된 계정을 나타냅니다.
-enum AccountStatus {
-  PENDING    // 승인 대기
-  ACTIVE     // 활성화
-  SUSPENDED  // 정지
-  DEMO       // 데모 계정
-}
-
-// 사용자 엔티티
+// 소셜 로그인 사용자
 // Spring Data JPA의 @Entity와 비슷한 역할을 합니다.
 model User {
-  id            String        @id @default(cuid()) // 고유 ID, CUID 방식으로 생성
-  email         String        @unique              // 이메일 (고유값)
-  password      String?                            // 로컬 인증 시 비밀번호 (소셜 로그인은 null)
-  name          String?                            // 사용자 이름
-  role          UserRole      @default(USER)       // 역할, 기본값은 일반 사용자
-  provider      AuthProvider  @default(LOCAL)      // 인증 제공자, 기본값은 로컬
-  providerId    String?                            // 소셜 로그인 시 제공자의 고유 ID
-  status        AccountStatus @default(PENDING)    // 계정 상태
-  refreshToken  String?                            // 현재 사용 중인 리프레시 토큰
-  emailVerified DateTime?                          // 이메일 인증 날짜
-  isDeleted     Boolean       @default(false)      // 소프트 삭제 여부
-  createdAt     DateTime      @default(now())      // 생성 일자
-  updatedAt     DateTime      @updatedAt           // 수정 일자
-  deletedAt     DateTime?                          // 소프트 삭제를 위한 필드
+  id              String        @id @default(cuid()) // 고유 ID, CUID 방식으로 생성
+  provider        AuthProvider                       // 인증 공급자
+  providerIdHash  String        @unique              // 해싱된 공급자 ID
+  createdAt       DateTime      @default(now())      // 생성 일자
+  updatedAt       DateTime      @updatedAt           // 수정 일자
+  isDeleted       Boolean       @default(false)      // 소프트 삭제 여부
+  deletedAt       DateTime?                          // 삭제 일자  
 
   // 관계 정의: JwtBlacklist 모델과 1:N 관계
-  blacklistedTokens JwtBlacklist[]
+  blacklistedTokens UserJwtBlacklist[]
 
-  // Spring Data JPA의 @Index와 유사
-  @@index([email, provider])
+  @@index([providerIdHash])
 }
 
-// JWT 블랙리스트 엔티티
-// Spring Data JPA에서 연관 관계를 표현한 엔티티와 유사합니다.
-model JwtBlacklist {
-  id        String   @id @default(cuid())       // 고유 ID
-  token     String   @unique                    // 블랙리스트에 등록된 JWT 토큰
-  userId    String                              // 소유 사용자 ID
-  expiresAt DateTime                            // 만료 일자
-  isDeleted Boolean   @default(false)           // 소프트 삭제 여부
-  createdAt DateTime @default(now())            // 생성 일자
-  
-  // 관계 정의: User 모델과 N:1 관계
-  user      User     @relation(fields: [userId], references: [id])
+// 사용자용 JWT 블랙리스트
+model UserJwtBlacklist {
+  id          String    @id @default(cuid())        // 고유 ID
+  token       String    @unique                     // JWT 토큰
+  userId      String                                // 소유 사용자 ID
+  expiresAt   DateTime                              // 만료 시간
+  createdAt   DateTime   @default(now())            // 생성 일자
 
-  @@index([token])
-  @@index([userId, expiresAt])
+  // 관계 정의: User와 N:1 관계
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@index([token, expiresAt])
+}
+
+// 관리자 역할 정의
+enum AdminRole {
+  SUPER_ADMIN    // 최상위 관리자
+  BOARD_ADMIN    // 특정 게시판 관리자
+}
+
+
+// 관리자 엔티티
+model Admin {
+  id            String        @id @default(cuid())    // 고유 ID
+  username      String        @unique                 // 관리자 로그인 ID
+  password      String                                // 해싱된 비밀번호
+  role          AdminRole     @default(SUPER_ADMIN)   // 관리자 역할
+  createdAt     DateTime      @default(now())         // 생성 일자
+  updatedAt     DateTime      @updatedAt              // 수정 일자
+  isDeleted     Boolean       @default(false)         // 소프트 삭제 여부
+  deletedAt     DateTime?                             // 삭제 일자     
+
+  // 관계 정의: AdminPermission과 1:N 관계
+  permissions   AdminPermission[]
+  blacklistedTokens AdminJwtBlacklist[]
+
+  @@index([username])
+}
+
+// 리소스 엔티티
+model Resource {
+  id            String            @id @default(cuid())  // 고유 ID
+  name          String            @unique               // 리소스 이름
+  description   String?                                 // 리소스 설명
+  createdAt     DateTime          @default(now())       // 생성 일자
+  updatedAt     DateTime          @updatedAt            // 수정 일자
+  isDeleted     Boolean           @default(false)       // 소프트 삭제 여부
+  deletedAt     DateTime?                               // 삭제 일자       
+
+  // 관계 정의: AdminPermission과 1:N 관계
+  permissions AdminPermission[]
+}
+
+// 관리자 권한 정의 (게시판별 CRUD 권한)
+model AdminPermission {
+  id          String       @id @default(cuid())        // 고유 ID
+  adminId     String                                   // 소유 관리자 ID
+  resourceId  String                                   // 대상 리소스
+  canCreate   Boolean      @default(false)             // 생성 권한
+  canRead     Boolean      @default(false)             // 읽기 권한
+  canUpdate   Boolean      @default(false)             // 수정 권한
+  canDelete   Boolean      @default(false)             // 삭제 권한
+  createdAt   DateTime     @default(now())             // 생성 일자
+  updatedAt   DateTime     @updatedAt                  // 수정 일자
+
+  // 관계 정의: Admin과 N:1 관계
+  admin     Admin       @relation(fields: [adminId], references: [id])
+  resource    Resource   @relation(fields: [resourceId], references: [id])
+
+  @@index([adminId, resourceId])
+}
+
+// 관리자용 JWT 블랙리스트
+model AdminJwtBlacklist {
+  id          String    @id @default(cuid())         // 고유 ID
+  token       String    @unique                     // JWT 토큰
+  adminId     String                                // 소유 관리자 ID
+  expiresAt   DateTime                              // 만료 시간
+  createdAt   DateTime   @default(now())            // 생성 일자
+
+  // 관계 정의: Admin과 N:1 관계
+  admin       Admin     @relation(fields: [adminId], references: [id])
+
+  @@index([token, expiresAt])
 }
