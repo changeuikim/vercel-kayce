@@ -103,15 +103,41 @@ export const userUtils: UserUtils = {
             );
         }
     },
-    findMany: async (options = { page: 1, limit: 10, orderBy: { createdAt: 'desc' } }) => {
-        // 임시로 빈 결과를 반환
-        return Promise.resolve({
-            users: [],
-            total: 0,
-            page: options.page || 1,
-            limit: options.limit || 10,
-            totalPages: 0,
-        } as PaginatedUsers);
+    findMany: async (
+        options: PaginationOptions = { page: 1, limit: 10, orderBy: { createdAt: 'desc' } }
+    ): Promise<PaginatedUsers> => {
+        const { page = 1, limit = 10, orderBy } = options;
+        const skip = (page - 1) * limit;
+
+        try {
+            // Transaction으로 데이터 조회 및 총 개수 계산
+            const [users, total] = await prisma.$transaction([
+                prisma.user.findMany({
+                    skip,
+                    take: limit,
+                    orderBy,
+                    where: { isDeleted: false },
+                    select: userSelectFields,
+                }),
+                prisma.user.count({
+                    where: { isDeleted: false },
+                }),
+            ]);
+
+            return {
+                users: users as SafeUser[],
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+            };
+        } catch (error: unknown) {
+            const err = error as any;
+            throw new PrismaErrorHandler(
+                err.message || 'Unexpected error occurred',
+                err.code || 'UNKNOWN_ERROR'
+            );
+        }
     },
     update: async (id: string, data: UpdateUserInput): Promise<SafeUser> => {
         // 실제 구현부는 나중에 작성
