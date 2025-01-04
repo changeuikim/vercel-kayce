@@ -1,0 +1,27 @@
+query GetUsers($filter: UserFilter, $sort: [UserSort!], $pagination: UserPaginationInput!) {
+    users(filter: $filter, sort: $sort, pagination: $pagination) {
+        edges {
+            node {
+                id
+                createdAt
+                isDeleted
+                deletedAt
+            }
+            cursor
+        }
+        pageInfo {
+            hasNextPage
+            hasPreviousPage
+            startCursor
+            endCursor
+        }
+        totalCount
+        queryComplexity
+        executionTime
+        errors {
+            code
+            message
+            field
+        }
+    }
+}

@@ -1,6 +1,6 @@
-# npx graphql-codegen
+# npx graphql-codegen --config codegen.yml
 schema: './src/app/graphql/schemas/**/*.graphql' # 스키마 파일 경로
-documents: null # 현재는 사용할 Query/Mutation 문서가 없음
+documents: './src/app/graphql/operations/**/*.graphql' # GraphQL 문서 경로
 generates:
     ./src/app/graphql/generated/types.ts: # 타입이 생성될 위치
         plugins:
@@ -10,5 +10,7 @@ generates:
             contextType: '@/lib/graphql/context#Context' # Context 타입 경로 지정
             avoidOptionals: true # Optional 타입 사용 방지
             maybeValue: T | null # `Maybe` 타입을 명시적으로 정의
+            mappers:
+                User: '@prisma/client#User as PrismaUser' # Prisma 모델과 GraphQL 타입 매핑
             scalars: # 커스텀 스칼라 타입 매핑
-                DateTime: string
+                DateTime: Date

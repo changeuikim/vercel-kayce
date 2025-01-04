@@ -1,10 +1,10 @@
-import { createYoga } from "@graphql-yoga/node";
-import { schema } from "@/app/graphql"; // 스키마 가져오기
+import { createYoga } from '@graphql-yoga/node';
+import { schema } from '@/app/graphql';
 
 const yoga = createYoga({
-  schema,
-  graphqlEndpoint: "/api/graphql",
-  graphiql: true, // Playground 활성화
+    schema,
+    graphqlEndpoint: '/api/graphql',
+    graphiql: true,
 });
 
 export { yoga as GET, yoga as POST };
