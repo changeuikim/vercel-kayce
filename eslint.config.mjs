@@ -14,7 +14,6 @@ const eslintConfig = [
     {
         rules: {
             // 규칙 추가
-            '@typescript-eslint/no-empty-object-type': 'off', // 빈 객체 타입 경고 비활성화
             '@typescript-eslint/no-explicit-any': 'warn', // any 사용을 경고로 설정
         },
     },
