@@ -108,7 +108,34 @@ export const userUtils: UserUtils = {
         });
     },
     restore: async (id: string): Promise<SafeUser> => {
-        // 실제 구현부는 나중에 작성
-        return Promise.resolve({} as SafeUser);
+        return withErrorHandler(async () => {
+            return await prisma.$transaction(async (tx) => {
+                // 사용자 조회
+                const user = await tx.user.findUnique({
+                    where: { id },
+                    select: userSelectFields,
+                });
+
+                // 존재하지 않거나 활성 상태인 사용자 예외 처리
+                if (!user || !user.isDeleted) {
+                    throw new AppError(
+                        `User with id "${id}" not found or not deleted.`,
+                        'BIZ_USER_NOT_FOUND'
+                    );
+                }
+
+                // 복구 수행
+                const restoredUser = await tx.user.update({
+                    where: { id },
+                    data: {
+                        isDeleted: false,
+                        deletedAt: null,
+                    },
+                    select: userSelectFields,
+                });
+
+                return restoredUser;
+            });
+        });
     },
 };

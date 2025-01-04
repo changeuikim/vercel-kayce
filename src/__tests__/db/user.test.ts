@@ -144,4 +144,50 @@ describe('userUtils', () => {
             );
         });
     });
+
+    describe('restore', () => {
+        it('정상적으로 유저를 복구한다', async () => {
+            // given: 테스트 사용자 생성 및 삭제
+            const userData = createTestUser({ providerId: 'testProviderId' });
+            const user = await userUtils.create(userData);
+            await userUtils.softDelete(user.id);
+
+            // when: 유저를 복구
+            const restoredUser = await userUtils.restore(user.id);
+
+            // then: 복구된 사용자의 속성 확인
+            expect(restoredUser).toMatchObject({
+                id: user.id,
+                isDeleted: false,
+                deletedAt: null, // 복구 후 삭제 일자가 null이어야 함
+            });
+        });
+
+        it('삭제되지 않은 유저를 복구하려 하면 예외를 발생시킨다', async () => {
+            // given: 테스트 사용자 생성
+            const userData = createTestUser({ providerId: 'testProviderId' });
+            const user = await userUtils.create(userData);
+
+            // when & then: 삭제되지 않은 유저를 복구 시도 → 예외 발생
+            await expect(userUtils.restore(user.id)).rejects.toThrow(
+                new AppError(
+                    `User with id "${user.id}" not found or not deleted.`,
+                    'BIZ_USER_NOT_FOUND'
+                )
+            );
+        });
+
+        it('존재하지 않는 유저를 복구하려 하면 예외를 발생시킨다', async () => {
+            // given: 존재하지 않는 사용자 ID
+            const nonExistentUserId = 'nonexistentId';
+
+            // when & then: 복구 시도 → 예외 발생
+            await expect(userUtils.restore(nonExistentUserId)).rejects.toThrow(
+                new AppError(
+                    `User with id "${nonExistentUserId}" not found or not deleted.`,
+                    'BIZ_USER_NOT_FOUND'
+                )
+            );
+        });
+    });
 });
