@@ -39,7 +39,8 @@ model User {
   // 관계 정의: JwtBlacklist 모델과 1:N 관계
   blacklistedTokens UserJwtBlacklist[]
 
-  @@index([providerIdHash])
+  @@index([providerIdHash, isDeleted])
+  @@index([isDeleted, createdAt])
 }
 
 // 사용자용 JWT 블랙리스트
