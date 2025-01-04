@@ -1,15 +1,22 @@
 import { prisma } from "@/lib/db/prisma";
-import { CreateUserInput, SafeUser } from "@/lib/db/user/types";
+import {
+  CreateUserInput,
+  SafeUser,
+  UserFindOptions,
+  UserFindResult,
+} from "@/lib/db/user/types";
 import { userSelectFields } from "@/lib/db/user/constants";
 import crypto from "crypto";
 import {
   BaseError,
   withBaseErrorHandler,
 } from "@/lib/error/base-error-handler";
+import { Prisma } from "@prisma/client";
 
 export interface UserUtils {
   create(data: CreateUserInput): Promise<SafeUser>;
   findByProviderId(providerId: string): Promise<SafeUser | null>;
+  findMany(options: UserFindOptions): Promise<UserFindResult>;
   softDelete(id: string): Promise<SafeUser>;
   restore(id: string): Promise<SafeUser>;
 }
@@ -76,6 +83,97 @@ export const userUtils: UserUtils = {
       });
 
       return user;
+    });
+  },
+  findMany: async (options: UserFindOptions): Promise<UserFindResult> => {
+    return withBaseErrorHandler(async () => {
+      const { filter, sort, pagination } = options;
+
+      // 1. Prisma where 조건 생성
+      const where: Prisma.UserWhereInput = {};
+      if (filter) {
+        // isDeleted 조건
+        if (filter.isDeleted !== undefined) {
+          where.isDeleted = filter.isDeleted;
+        }
+
+        // createdAt 날짜 범위
+        if (filter.createdAt) {
+          where.createdAt = {
+            ...(filter.createdAt.lte && {
+              lte: new Date(filter.createdAt.lte),
+            }),
+            ...(filter.createdAt.gte && {
+              gte: new Date(filter.createdAt.gte),
+            }),
+          };
+        }
+
+        // deletedAt 날짜 범위
+        if (filter.deletedAt) {
+          where.deletedAt = {
+            ...(filter.deletedAt.lte && {
+              lte: new Date(filter.deletedAt.lte),
+            }),
+            ...(filter.deletedAt.gte && {
+              gte: new Date(filter.deletedAt.gte),
+            }),
+          };
+        }
+
+        // AND/OR 조건
+        if (filter.AND) {
+          where.AND = filter.AND.map((andFilter) => ({
+            ...andFilter,
+          }));
+        }
+        if (filter.OR) {
+          where.OR = filter.OR.map((orFilter) => ({
+            ...orFilter,
+          }));
+        }
+      }
+
+      // 2. 정렬 조건 생성
+      const orderBy = sort?.map((s) => ({
+        [s.field]: s.direction,
+      }));
+
+      // 3. 페이지네이션 옵션 생성
+      const { take, skip, cursor } = pagination || {};
+      const paginationArgs: Prisma.UserFindManyArgs = {
+        where, // 필터 조건
+        orderBy, // 정렬 조건
+        take: take ? take + 1 : undefined, // 가져올 데이터 수
+        skip, // 건너뛸 데이터 수
+        ...(cursor && {
+          cursor: { id: cursor },
+          skip: 1, // 현재 커서 다음부터
+        }),
+      };
+
+      // 4. 데이터 조회
+      const [users, totalCount] = await Promise.all([
+        prisma.user.findMany({
+          ...paginationArgs,
+          select: userSelectFields,
+        }),
+        prisma.user.count({ where }),
+      ]);
+
+      // 5. 페이지네이션 여부 계산
+      // 결과 반환 전에 추가 데이터 제거
+      let hasNextPage = false;
+      if (take && users.length > take) {
+        hasNextPage = true;
+        users.pop(); // 추가로 가져온 데이터 제거
+      }
+
+      return {
+        users,
+        totalCount,
+        hasNextPage,
+      };
     });
   },
   softDelete: async (id: string): Promise<SafeUser> => {
