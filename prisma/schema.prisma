@@ -32,7 +32,6 @@ model User {
   provider        AuthProvider                       // 인증 공급자
   providerIdHash  String        @unique              // 해싱된 공급자 ID
   createdAt       DateTime      @default(now())      // 생성 일자
-  updatedAt       DateTime      @updatedAt           // 수정 일자
   isDeleted       Boolean       @default(false)      // 소프트 삭제 여부
   deletedAt       DateTime?                          // 삭제 일자  
 
@@ -40,7 +39,7 @@ model User {
   blacklistedTokens UserJwtBlacklist[]
 
   @@index([providerIdHash, isDeleted])
-  @@index([isDeleted, createdAt])
+  @@index([createdAt, isDeleted])
 }
 
 // 사용자용 JWT 블랙리스트

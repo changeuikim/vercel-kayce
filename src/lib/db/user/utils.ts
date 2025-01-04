@@ -1,11 +1,5 @@
 import { prisma } from '@/lib/db/prisma';
-import {
-    CreateUserInput,
-    SafeUser,
-    PaginationOptions,
-    PaginatedUsers,
-    UpdateUserInput,
-} from '@/lib/db/user/types';
+import { CreateUserInput, SafeUser } from '@/lib/db/user/types';
 import { userSelectFields } from '@/lib/db/user/constants';
 import crypto from 'crypto';
 import { AppError, withErrorHandler } from '@/lib/db/common/errorHandlers';
@@ -13,7 +7,6 @@ import { AppError, withErrorHandler } from '@/lib/db/common/errorHandlers';
 export interface UserUtils {
     create(data: CreateUserInput): Promise<SafeUser>;
     findByProviderId(providerId: string): Promise<SafeUser | null>;
-    update(id: string, data: UpdateUserInput): Promise<SafeUser>;
     softDelete(id: string): Promise<SafeUser>;
     restore(id: string): Promise<SafeUser>;
 }
@@ -80,21 +73,39 @@ export const userUtils: UserUtils = {
                 select: userSelectFields,
             });
 
-            // 일치하는 사용자 없을시 null 반환
-            if (!user) {
-                return null;
-            }
-
             return user;
         });
     },
-    update: async (id: string, data: UpdateUserInput): Promise<SafeUser> => {
-        // 실제 구현부는 나중에 작성
-        return Promise.resolve({} as SafeUser);
-    },
     softDelete: async (id: string): Promise<SafeUser> => {
-        // 실제 구현부는 나중에 작성
-        return Promise.resolve({} as SafeUser);
+        return withErrorHandler(async () => {
+            return await prisma.$transaction(async (tx) => {
+                // 사용자 조회
+                const user = await tx.user.findUnique({
+                    where: { id },
+                    select: userSelectFields,
+                });
+
+                // 존재하지 않거나 이미 삭제된 사용자 예외 처리
+                if (!user || user.isDeleted) {
+                    throw new AppError(
+                        `User with id "${id}" not found or already deleted.`,
+                        'BIZ_USER_NOT_FOUND'
+                    );
+                }
+
+                // 소프트 삭제 수행
+                const deletedUser = await tx.user.update({
+                    where: { id },
+                    data: {
+                        isDeleted: true,
+                        deletedAt: new Date(),
+                    },
+                    select: userSelectFields,
+                });
+
+                return deletedUser;
+            });
+        });
     },
     restore: async (id: string): Promise<SafeUser> => {
         // 실제 구현부는 나중에 작성
