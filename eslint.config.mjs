@@ -13,8 +13,8 @@ const eslintConfig = [
     ...compat.extends('next/core-web-vitals', 'next/typescript'),
     {
         rules: {
-            '@typescript-eslint/no-empty-object-type': 'off', // 비활성화
-            '@typescript-eslint/no-explicit-any': 'off', // 비활성화
+            // 규칙 추가
+            '@typescript-eslint/no-explicit-any': 'warn', // any 사용을 경고로 설정
         },
     },
 ];

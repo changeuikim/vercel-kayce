@@ -20,8 +20,17 @@
         ],
         "paths": {
             "@/*": ["./src/*"]
-        }
+        },
+        "types": ["node", "jest"], // Jest 타입 추가
+        "typeRoots": ["node_modules/@types"] // 타입 정의 경로 추가
     },
-    "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+    "include": [
+        "next-env.d.ts",
+        "**/*.ts",
+        "**/*.tsx",
+        ".next/types/**/*.ts",
+        "jest.config.ts", // Jest 설정 파일 포함
+        "jest.setup.ts" // Jest 초기화 파일 포함
+    ],
     "exclude": ["node_modules"]
 }
