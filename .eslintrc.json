@@ -1,0 +1,9 @@
+{
+  "extends": ["next/core-web-vitals", "airbnb", "airbnb/hooks", "prettier"],
+  "rules": {
+    "react/react-in-jsx-scope": "off",
+    "react/jsx-filename-extension": [1, { "extensions": [".tsx", ".ts"] }],
+    "react/jsx-uses-react": "off",
+    "no-undef": "off"
+  }
+}
