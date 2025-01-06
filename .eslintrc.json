@@ -1,9 +1,30 @@
 {
   "extends": ["next/core-web-vitals", "airbnb", "airbnb/hooks", "prettier"],
   "rules": {
+    // 기존 규칙 유지
     "react/react-in-jsx-scope": "off",
     "react/jsx-filename-extension": [1, { "extensions": [".tsx", ".ts"] }],
     "react/jsx-uses-react": "off",
-    "no-undef": "off"
+    "no-undef": "off",
+
+    // 새로운 규칙 추가
+    "react/jsx-props-no-spreading": "off",
+    "import/extensions": [
+      "error",
+      "ignorePackages",
+      {
+        "ts": "never",
+        "tsx": "never",
+        "js": "never",
+        "jsx": "never"
+      }
+    ],
+    "import/prefer-default-export": "off",
+    "react/require-default-props": "off",
+    "no-use-before-define": "off",
+    "consistent-return": "off",
+    "default-case": "off",
+    "no-shadow": "off",
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }]
   }
 }
